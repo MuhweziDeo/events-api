@@ -2,10 +2,15 @@ const express = require('express');
 const graphQLHttp = require('express-graphql');
 const app = express();
 const graphql = require('graphql');
-
+const mongoose = require('mongoose');
 const {buildSchema} = graphql;
+const Event = require('./models/events');
 
 
+const url = 'mongodb://localhost:27017/graphql2';
+mongoose.connect(url)
+    .then(()=>console.log(`connected to ${url} `))
+    .catch(error=>console.log(error));
 const events = [];
 
 app.use(express.json());
@@ -40,18 +45,17 @@ app.use('/graphql', graphQLHttp({
     `),
     rootValue: {
         events: () => {
-            return events;
+            return Event.find({});
         },
-        createEvent: (args) => {
-            const event = {
-                _id: Math.random().toString(),
-                date: new Date(),
+         createEvent: async(args) => {
+            const event = new Event({
                 title: args.eventInput.title,
                 description: args.eventInput.description,
-                price: parseFloat(args.eventInput.price)
-            }
-            events.push(event);
-            return event;
+                price: parseFloat(args.eventInput.price),
+                date: new Date()
+            });
+            // event.save()
+            return event.save().then(result =>result).catch(e=>error);
         }
     },
     graphiql: true
